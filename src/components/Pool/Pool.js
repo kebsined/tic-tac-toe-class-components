@@ -1,23 +1,23 @@
-import styles from './Pool.module.css';
 import { Button } from '../button/Button';
 import PropTypes from 'prop-types';
-import { useSelector } from 'react-redux';
-import { fieldsSelector } from '../../selectors';
+import { connect } from 'react-redux';
+import { Component } from 'react';
 
-export const PoolLayout = () => {
-	const fields = useSelector(fieldsSelector);
+class PoolLayout extends Component {
+	render() {
+		return (
+			<div className='grid grid-cols-3 w-86 h-86 gap-1 items-center'>
+				{this.props.fields.map((item, i) => (
+					<Button key={i} item={item} i={i} />
+				))}
+			</div>
+		);
+	}
+}
 
-	return (
-		<div className={styles.pool}>
-			{fields.map((item, i) => (
-				<Button key={i} item={item} i={i} />
-			))}
-		</div>
-	);
-};
+const mapStateToProps = state => ({ fields: state.fields });
+export const Pool = connect(mapStateToProps)(PoolLayout);
 
-PoolLayout.propTypes = {
+Pool.propTypes = {
 	fields: PropTypes.array,
-	playerClick: PropTypes.func,
-	currentPlayer: PropTypes.string,
 };

@@ -1,13 +1,8 @@
-import styles from './Button.module.css';
+import { Component } from 'react';
+
 import PropTypes from 'prop-types';
 
-import {
-	isGameEndedSelector,
-	currentPlayerSelector,
-	isDrawSelector,
-	fieldsSelector,
-} from '../../selectors';
-import { useDispatch, useSelector } from 'react-redux';
+import { connect } from 'react-redux';
 
 const WIN_PATTERNS = [
 	[0, 1, 2],
@@ -26,58 +21,81 @@ const checkWinner = (fields, currentPlayer) => {
 	);
 };
 
-export const Button = ({ i, item }) => {
-	const dispatch = useDispatch();
-
-	const fields = useSelector(fieldsSelector);
-	const currentPlayer = useSelector(currentPlayerSelector);
-	const isDraw = useSelector(isDrawSelector);
-	const isGameEnded = useSelector(isGameEndedSelector);
-
-	const setCurrentPlayer = () => {
-		return currentPlayer === String.fromCharCode(10008)
+class ButtonLayout extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			fields: props.fields,
+			isGameEnded: props.isGameEnded,
+			currentPlayer: props.currentPlayer,
+			isDraw: props.isDraw,
+		};
+		this.setCurrentPlayer = this.setCurrentPlayer.bind(this);
+		this.setIsDraw = this.setIsDraw.bind(this);
+		this.currentPlayerTurn = this.currentPlayerTurn.bind(this);
+		this.i = this.props.i;
+		this.item = this.props.item;
+	}
+	setCurrentPlayer() {
+		return this.props.currentPlayer === String.fromCharCode(10008)
 			? String.fromCharCode(10683)
 			: String.fromCharCode(10008);
-	};
-
-	const setIsDraw = fields => {
-		return !fields.includes('');
-	};
-
-	const currentPlayerTurn = i => {
-		if (isGameEnded || isDraw || fields[i] !== '') {
+	}
+	setIsDraw() {
+		return !this.props.fields.includes('');
+	}
+	currentPlayerTurn() {
+		if (
+			this.props.isGameEnded ||
+			this.props.isDraw ||
+			this.props.fields[this.i] !== ''
+		) {
 			return;
 		}
-		const playerFields = fields.slice();
-		playerFields[i] = currentPlayer;
+		const playerFields = this.props.fields.slice();
+		playerFields[this.props.i] = this.props.currentPlayer;
 
-		dispatch({ type: 'SET_FIELDS', payload: playerFields });
+		this.props.dispatch({ type: 'SET_FIELDS', payload: playerFields });
 
-		dispatch({
+		this.props.dispatch({
 			type: 'SET_IS_GAME_ENDED',
-			payload: checkWinner(playerFields, currentPlayer),
+			payload: checkWinner(playerFields, this.props.currentPlayer),
 		});
-		if (!checkWinner(playerFields, currentPlayer)) {
-			dispatch({
+
+		if (!playerFields.some(item => item === '')) {
+			this.props.dispatch({ type: 'SET_IS_DRAW', payload: true });
+			return;
+		}
+
+		if (!checkWinner(playerFields, this.props.currentPlayer)) {
+			this.props.dispatch({
 				type: 'SET_CURRENT_PLAYER',
-				payload: setCurrentPlayer(currentPlayer),
-			});
-			dispatch({
-				type: 'SET_IS_DRAW',
-				payload: setIsDraw(playerFields),
+				payload: this.setCurrentPlayer(this.props.currentPlayer),
 			});
 		}
-	};
-	return (
-		<button
-			className={styles.button}
-			onClick={() => currentPlayerTurn(i)}
-			disabled={item}
-		>
-			{item}
-		</button>
-	);
-};
+	}
+
+	render() {
+		return (
+			<button
+				className='w-28 h-28 border-none text-white text-6xl italic drop-shadow-[1px_10px_10px_rgb(255,204,0)] bg-transparent rounded-2xl shadow-white shadow-lg hover:bg-indigo-400 active:scale-90'
+				onClick={() => this.currentPlayerTurn(this.i)}
+				disabled={this.props.item}
+			>
+				{this.props.item}
+			</button>
+		);
+	}
+}
+
+const mapStateToProps = state => ({
+	currentPlayer: state.currentPlayer,
+	fields: state.fields,
+	isDraw: state.isDraw,
+	isGameEnded: state.isGameEnded,
+});
+
+export const Button = connect(mapStateToProps)(ButtonLayout);
 
 Button.propTypes = {
 	item: PropTypes.string,
